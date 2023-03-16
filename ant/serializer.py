@@ -1,11 +1,12 @@
 import struct
-
+import traceback
 
 STRING = 0
 INT = 1
 BOOL = 2
 FLOAT = 3
 TUPLE = 4
+EXCEPTION = 5
 
 
 def prepend_size(data):
@@ -55,6 +56,8 @@ def read(data):
         return read_float(data)
     elif type == TUPLE:
         return read_tuple(data)
+    elif type == EXCEPTION:
+        return read_exception(data)
     else:
         raise Exception("Unknown type %d" % type)
 
@@ -67,6 +70,11 @@ def read_packet(data, skipsize=False):
     data, left = read(data)
     assert len(left) == 0
     return name, data
+
+
+def read_exception(data):
+    string, data = read_string(data)
+    return Exception(string), data
 
 
 def write_string(data):
@@ -110,8 +118,15 @@ def write(data):
     if isinstance(data, tuple):
         return struct.pack(">i", TUPLE) + write_tuple(data)
 
+    if isinstance(data, Exception):
+        return struct.pack(">i", EXCEPTION) + write_exception(data)
+
     raise Exception("Unknown type %s" % type(data))
 
 
 def write_packet(name, data):
     return prepend_size(write_string(name) + write(data))
+
+
+def write_exception(data):
+    return write_string(traceback.format_exc(data))

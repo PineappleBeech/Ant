@@ -1,12 +1,14 @@
 import inspect
 import socket
+import struct
 
 from collections import defaultdict
 
 from ant.util import AtomicInteger
 from ant.reference import FunctionRef
 import asyncio
-from ant.network import Connection, HostPacketHandler
+from ant.network import Connection, HostPacketHandler, HostMulticastProtocol
+from ant.consts import MUILTICAST_GROUP, MUILTICAST_PORT
 
 class Host:
     worker_funcs = defaultdict(dict)
@@ -14,6 +16,7 @@ class Host:
     def __init__(self, port):
         self.port = port
         self.server = None
+        self.multicast_responder = None
         self.workers = defaultdict(asyncio.Future)
         self.temp_workers = {}
         self.temp_workers_ids = AtomicInteger()
@@ -22,13 +25,22 @@ class Host:
         asyncio.create_task(self.run_async())
 
     async def run_async(self):
-        self.server = await asyncio.start_server(self.handle_connection, "127.0.0.1", self.port)
+        self.server = await asyncio.start_server(self.handle_connection, "0.0.0.0", self.port)
+        loop = asyncio.get_running_loop()
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        mreq = struct.pack("4sl", socket.inet_aton(MUILTICAST_GROUP), socket.INADDR_ANY)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 4)
+        sock.bind(("", MUILTICAST_PORT))
+        self.multicast_responder = await loop.create_datagram_endpoint(HostMulticastProtocol, sock=sock)
 
     async def handle_connection(self, reader, writer):
         print("New connection")
         worker_id = await self.temp_workers_ids.get()
         self.temp_workers[worker_id] = Worker(self, worker_id, (reader, writer))
-
 
     async def get_worker(self, worker_id):
         return await self.workers[worker_id]
@@ -62,6 +74,10 @@ class Worker:
     def _handle_result(self, data):
         result_id, result = data
         self._results[result_id].set_result(result)
+
+    def _handle_exception(self, data):
+        result_id, exception = data
+        self._results[result_id].set_exception(Exception(exception))
 
     def __getattr__(self, item):
         if item in self._funcs:

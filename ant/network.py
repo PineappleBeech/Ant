@@ -1,7 +1,9 @@
 import abc
 import asyncio
+import socket
 import struct
 from ant.serializer import read_packet, write_packet
+from ant.consts import MUILTICAST_GROUP, MUILTICAST_PORT, PORT
 
 
 class Connection:
@@ -83,6 +85,9 @@ class HostPacketHandler(PacketHandler):
         if name == "result":
             self.handle_result(data)
 
+        elif name == "exception":
+            self.handle_exception(data)
+
         elif name == "register_id":
             self.register_id(data)
 
@@ -92,5 +97,24 @@ class HostPacketHandler(PacketHandler):
     def handle_result(self, data):
         self.worker._handle_result(data)
 
+    def handle_exception(self, data):
+        self.worker._handle_exception(data)
+
     def register_id(self, data):
         self.worker._register_id(data)
+
+
+class HostMulticastProtocol(asyncio.DatagramProtocol):
+    def __init__(self):
+        pass
+
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def datagram_received(self, data, addr):
+        print("Datagram received")
+        name, data = read_packet(data)
+        if name == "discover":
+            print("Received discover")
+            self.transport.sendto(write_packet("found", (PORT, socket.gethostbyname(socket.gethostname()))), addr)
+            self.transport.close()
