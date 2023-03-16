@@ -3,15 +3,15 @@ import traceback
 
 from ant.network import Connection, WorkerPacketHandler
 from ant.serializer import write_packet, read_packet
-from ant.consts import MULTICAST_GROUP, MULTICAST_PORT
+from ant.consts import MULTICAST_GROUP, MULTICAST_PORT, PORT
 import socket
 
 
 class Worker:
-    def __init__(self, id, port):
+    def __init__(self, id):
         self.id = id
         self.host = None
-        self.port = port
+        self.port = PORT
         self.globals = {}
         self.connection = None
 
