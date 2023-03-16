@@ -3,7 +3,7 @@ import asyncio
 import socket
 import struct
 from ant.serializer import read_packet, write_packet
-from ant.consts import MUILTICAST_GROUP, MUILTICAST_PORT, PORT
+from ant.consts import MULTICAST_GROUP, MULTICAST_PORT, PORT
 
 
 class Connection:

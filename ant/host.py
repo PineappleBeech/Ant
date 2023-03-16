@@ -8,7 +8,7 @@ from ant.util import AtomicInteger
 from ant.reference import FunctionRef
 import asyncio
 from ant.network import Connection, HostPacketHandler, HostMulticastProtocol
-from ant.consts import MUILTICAST_GROUP, MUILTICAST_PORT, PORT
+from ant.consts import MULTICAST_GROUP, MULTICAST_PORT, PORT
 
 class Host:
     worker_funcs = defaultdict(dict)
@@ -29,12 +29,12 @@ class Host:
         loop = asyncio.get_running_loop()
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        mreq = struct.pack("4sl", socket.inet_aton(MUILTICAST_GROUP), socket.INADDR_ANY)
+        mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 4)
-        sock.bind(("", MUILTICAST_PORT))
+        sock.bind(("", MULTICAST_PORT))
         self.multicast_responder = await loop.create_datagram_endpoint(HostMulticastProtocol, sock=sock)
 
     async def handle_connection(self, reader, writer):

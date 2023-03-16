@@ -3,7 +3,7 @@ import traceback
 
 from ant.network import Connection, WorkerPacketHandler
 from ant.serializer import write_packet, read_packet
-from ant.consts import MUILTICAST_GROUP, MUILTICAST_PORT
+from ant.consts import MULTICAST_GROUP, MULTICAST_PORT
 import socket
 
 
@@ -67,7 +67,7 @@ class Worker:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 4)
-        s.sendto(write_packet("discover", 0), (MUILTICAST_GROUP, MUILTICAST_PORT))
+        s.sendto(write_packet("discover", 0), (MULTICAST_GROUP, MULTICAST_PORT))
         s.settimeout(1)
         try:
             data, addr = s.recvfrom(1024)
