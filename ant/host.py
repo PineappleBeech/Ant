@@ -8,13 +8,13 @@ from ant.util import AtomicInteger
 from ant.reference import FunctionRef
 import asyncio
 from ant.network import Connection, HostPacketHandler, HostMulticastProtocol
-from ant.consts import MUILTICAST_GROUP, MUILTICAST_PORT
+from ant.consts import MUILTICAST_GROUP, MUILTICAST_PORT, PORT
 
 class Host:
     worker_funcs = defaultdict(dict)
 
-    def __init__(self, port):
-        self.port = port
+    def __init__(self):
+        self.port = PORT
         self.server = None
         self.multicast_responder = None
         self.workers = defaultdict(asyncio.Future)

@@ -11,7 +11,7 @@ def five():
 
 
 async def main():
-    host = Host(6543)
+    host = Host()
     await host.run_async()
 
     worker = await host.get_worker("test")
